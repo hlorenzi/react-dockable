@@ -1,4 +1,4 @@
-import Rect from "../util/rect"
+import { Rect } from "./rect"
 
 
 export type PanelId = number
@@ -165,6 +165,20 @@ export function makePanel(state: State): Panel
         ephemeral: false,
     }
     state.floatingPanels.push(panel)
+    return panel
+}
+
+
+export function createAndDockPanel(
+    state: State,
+    dockIntoPanel: Panel,
+    mode: DockMode,
+    content: ContentElement)
+    : Panel
+{
+    const panel = makePanel(state)
+    addNewContent(state, panel, content)
+    dock(state, panel, dockIntoPanel, mode)
     return panel
 }
 

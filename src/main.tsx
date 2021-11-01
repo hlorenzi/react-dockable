@@ -7,13 +7,31 @@ function WindowBasic(props: {
     value: number,
 })
 {
-    return <div>{ props.value }</div>
+    return <div style={{
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        justifyContent: "center",
+        alignContent: "center",
+        fontSize: "3em",
+    }}>
+        { props.value }
+    </div>
 }
 
 
 function App()
 {
-    const state = Dockable.useDockable()
+    const state = Dockable.useDockable((state) =>
+    {
+        Dockable.createAndDockPanel(state, state.rootPanel, Dockable.DockMode.Full, <WindowBasic value={ 0 }/>)
+        Dockable.createAndDockPanel(state, state.rootPanel, Dockable.DockMode.Full, <WindowBasic value={ 0 }/>)
+        Dockable.createAndDockPanel(state, state.rootPanel, Dockable.DockMode.Full, <WindowBasic value={ 0 }/>)
+        Dockable.createAndDockPanel(state, state.rootPanel, Dockable.DockMode.Full, <WindowBasic value={ 0 }/>)
+        Dockable.createAndDockPanel(state, state.rootPanel, Dockable.DockMode.Full, <WindowBasic value={ 0 }/>)
+        Dockable.createAndDockPanel(state, state.rootPanel, Dockable.DockMode.Right, <WindowBasic value={ 0 }/>)
+        Dockable.createAndDockPanel(state, state.rootPanel, Dockable.DockMode.Bottom, <WindowBasic value={ 0 }/>)
+    })
 
     const counter = React.useRef(1)
 

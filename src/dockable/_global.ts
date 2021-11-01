@@ -1,12 +1,18 @@
 import * as React from "react"
 import * as Dockable from "./index"
-import Rect from "../util/rect"
-import { RefState, useRefState } from "../util/refState"
 
 
-export function useDockable(): RefState<Dockable.State>
+export function useDockable(init?: (state: Dockable.State) => void): Dockable.RefState<Dockable.State>
 {
-    return useRefState(() => Dockable.makeState())
+    return Dockable.useRefState(() =>
+    {
+        const state = Dockable.makeState()
+
+        if (init)
+            init(state)
+
+        return state
+    })
 }
 
 
@@ -32,11 +38,11 @@ window.addEventListener("mousemove", (ev: MouseEvent) =>
 
 
 export function createFloating(
-    refState: RefState<Dockable.State>,
+    refState: Dockable.RefState<Dockable.State>,
     elem: JSX.Element,
     alignX?: number,
     alignY?: number,
-    rect?: Rect)
+    rect?: Dockable.Rect)
     : Dockable.Panel
 {
     let state = refState.ref.current
@@ -44,11 +50,11 @@ export function createFloating(
     const panel = Dockable.makePanel(state)
     Dockable.addNewContent(state, panel, elem)
     if (rect)
-        panel.rect = new Rect(rect.x2, rect.y2, 500, 300)
+        panel.rect = new Dockable.Rect(rect.x2, rect.y2, 500, 300)
     else
-        panel.rect = new Rect(mousePos.x, mousePos.y, 500, 300)
+        panel.rect = new Dockable.Rect(mousePos.x, mousePos.y, 500, 300)
 
-    panel.justOpenedAnchorRect = rect ?? new Rect(mousePos.x - 15, mousePos.y - 15, 30, 30)
+    panel.justOpenedAnchorRect = rect ?? new Dockable.Rect(mousePos.x - 15, mousePos.y - 15, 30, 30)
     panel.justOpenedAnchorAlignX = alignX ?? 1
     panel.justOpenedAnchorAlignY = alignY ?? 1
     panel.bugfixAppearOnTop = true
@@ -60,11 +66,11 @@ export function createFloating(
 
 
 export function createFloatingEphemeral(
-    refState: RefState<Dockable.State>,
+    refState: Dockable.RefState<Dockable.State>,
     elem: JSX.Element,
     alignX?: number,
     alignY?: number,
-    rect?: Rect)
+    rect?: Dockable.Rect)
     : Dockable.Panel
 {
     const panel = createFloating(refState, elem, alignX, alignY, rect)
