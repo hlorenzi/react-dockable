@@ -139,7 +139,6 @@ export function ContainerPanel(props: {
     const isActivePanel = props.state.ref.current.activePanel === panelRect.panel
 
     return <StyledPanelRoot
-        key={ panelRect.panel.id }
         style={{
             left: `${ panelRect.rect.x }px`,
             top: `${ panelRect.rect.y }px`,

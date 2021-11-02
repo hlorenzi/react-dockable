@@ -13,6 +13,7 @@ export interface State
     floatingPanels: Panel[]
     activePanel: Panel | null
 
+    draggedPanel: Panel | null
     showAnchors: boolean
     previewAnchor: Anchor | null
 }
@@ -40,7 +41,6 @@ export interface Panel
     id: PanelId
     floating: boolean
     rect: Rect
-    bugfixAppearOnTop: boolean
 
     contentList: Content[]
     currentTabIndex: number
@@ -49,7 +49,8 @@ export interface Panel
     splitMode: SplitMode
     splitSize: number
 
-    preferredFloatingSize: Rect
+    preferredWidth: number
+    preferredHeight: number
 
     justOpened: boolean
     justOpenedAnchorRect: Rect
@@ -121,7 +122,6 @@ export function makeState(): State
         rootPanel: {
             id: 1,
             floating: false,
-            bugfixAppearOnTop: false,
             rect: new Rect(0, 0, 0, 0),
             contentList: [],
             currentTabIndex: 0,
@@ -129,7 +129,8 @@ export function makeState(): State
             splitMode: SplitMode.LeftRight,
             splitSize: 0.5,
 
-            preferredFloatingSize: new Rect(0, 0, 300, 250),
+            preferredWidth: 300,
+            preferredHeight: 250,
 
             justOpened: false,
             justOpenedAnchorRect: new Rect(0, 0, 0, 0),
@@ -140,6 +141,7 @@ export function makeState(): State
         floatingPanels: [],
         activePanel: null,
 
+        draggedPanel: null,
         showAnchors: false,
         previewAnchor: null,
     }
@@ -152,7 +154,6 @@ export function makePanel(state: State): Panel
     const panel: Panel = {
         id,
         floating: true,
-        bugfixAppearOnTop: false,
         rect: new Rect(0, 0, 0, 0),
 
         contentList: [],
@@ -162,7 +163,8 @@ export function makePanel(state: State): Panel
         splitMode: SplitMode.LeftRight,
         splitSize: 0.5,
 
-        preferredFloatingSize: new Rect(0, 0, 300, 250),
+        preferredWidth: 300,
+        preferredHeight: 250,
 
         justOpened: true,
         justOpenedAnchorRect: new Rect(0, 0, 0, 0),

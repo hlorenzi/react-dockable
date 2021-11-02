@@ -38,17 +38,15 @@ window.addEventListener("mousemove", (ev: MouseEvent) =>
 
 
 export function createFloating(
-    refState: Dockable.RefState<Dockable.State>,
+    state: Dockable.RefState<Dockable.State>,
     elem: JSX.Element,
     alignX?: number,
     alignY?: number,
     rect?: Dockable.Rect)
     : Dockable.Panel
 {
-    let state = refState.ref.current
-
-    const panel = Dockable.makePanel(state)
-    Dockable.addNewContent(state, panel, elem)
+    const panel = Dockable.makePanel(state.ref.current)
+    Dockable.addNewContent(state.ref.current, panel, elem)
     if (rect)
         panel.rect = new Dockable.Rect(rect.x2, rect.y2, 500, 300)
     else
@@ -57,44 +55,42 @@ export function createFloating(
     panel.justOpenedAnchorRect = rect ?? new Dockable.Rect(mousePos.x - 15, mousePos.y - 15, 30, 30)
     panel.justOpenedAnchorAlignX = alignX ?? 1
     panel.justOpenedAnchorAlignY = alignY ?? 1
-    panel.bugfixAppearOnTop = true
 
-    state.activePanel = panel
-    refState.commit()
+    state.ref.current.activePanel = panel
+    state.commit()
     return panel
 }
 
 
 export function createFloatingEphemeral(
-    refState: Dockable.RefState<Dockable.State>,
+    state: Dockable.RefState<Dockable.State>,
     elem: JSX.Element,
     alignX?: number,
     alignY?: number,
     rect?: Dockable.Rect)
     : Dockable.Panel
 {
-    const panel = createFloating(refState, elem, alignX, alignY, rect)
-    Dockable.removeEphemerals(refState.ref.current)
+    const panel = createFloating(state, elem, alignX, alignY, rect)
+    Dockable.removeEphemerals(state.ref.current)
     panel.ephemeral = true
-    refState.commit()
+    state.commit()
     return panel
 }
 
 
-export interface WindowProps
+export interface ContentContextProps
 {
-    panel: Dockable.Panel
-    contentId: Dockable.ContentId
+    layoutContent: Dockable.LayoutContent
 
     setTitle: (title: string) => void
     setPreferredSize: (w: number, h: number) => void
 }
 
 
-export const WindowContext = React.createContext<WindowProps>(null!)
+export const ContentContext = React.createContext<ContentContextProps>(null!)
 
 
-export function useWindow(): WindowProps
+export function useContentContext(): ContentContextProps
 {
-    return React.useContext(WindowContext)
+    return React.useContext(ContentContext)
 }
