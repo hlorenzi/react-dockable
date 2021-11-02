@@ -46,6 +46,7 @@ const StyledTabRowInner = styled.div<{
 
     overflow-x: auto;
     overflow-y: hidden;
+    user-select: none;
 
     &::-webkit-scrollbar
     {
@@ -126,12 +127,14 @@ const StyledCloseButton = styled.button<{
 export function ContainerPanel(props: {
     state: Dockable.RefState<Dockable.State>,
     panelRect: Dockable.LayoutPanel,
-    mouseHandler: Dockable.MouseHandlerData,
     tabHeight: number,
+    onClickPanel: () => void,
+    onClickTab: (tabNumber: number) => void,
+    onCloseTab: (ev: React.MouseEvent<HTMLButtonElement, MouseEvent>, tabNumber: number) => void,
+    onDragHeader: (ev: React.MouseEvent<HTMLDivElement, MouseEvent>, tabNumber: number | null) => void,
 })
 {
     const panelRect: Dockable.LayoutPanel = props.panelRect
-    const mouseHandler: Dockable.MouseHandlerData = props.mouseHandler
 
     const isActivePanel = props.state.ref.current.activePanel === panelRect.panel
 
@@ -146,26 +149,34 @@ export function ContainerPanel(props: {
     }}>
         <StyledTabRow
             className={ isActivePanel ? "active" : undefined }
-            onMouseDown={ ((ev: MouseEvent) => mouseHandler.onPanelActivate(ev, panelRect.panel)) as any }
         >
             <StyledTabRowInner
                 draggable
-                onMouseDown={ ((ev: MouseEvent) => mouseHandler.onPanelHeaderMouseDown(ev, panelRect.panel)) as any }
                 tabHeight={ props.tabHeight }
                 tabCount={ panelRect.panel.contentList.length }
+                onMouseDown={ ev => {
+                    props.onClickPanel()
+                    props.onDragHeader(ev, null)
+                }}
             >
 
-                { panelRect.panel.contentList.map((cId, idx) =>
+                { panelRect.panel.contentList.map((content, tabNumber) =>
                     <StyledTab
-                        key={ cId.contentId }
-                        onMouseDown={ ((ev: MouseEvent) => mouseHandler.onPanelTabMouseDown(ev, panelRect.panel, idx)) as any }
-                        tabNumber={ idx }
-                        isCurrentTab={ panelRect.panel.tabIndex == idx }
+                        key={ content.contentId }
+                        tabNumber={ tabNumber }
+                        isCurrentTab={ panelRect.panel.currentTabIndex == tabNumber }
+                        onMouseDown={ ev => {
+                            props.onClickTab(tabNumber)
+                            props.onDragHeader(ev, tabNumber)
+                        }}
                     >
-                        <span>{ cId.title || `Content ${ cId.contentId }` }</span>
+                        <span>{ content.title || `Content ${ content.contentId }` }</span>
                         <StyledCloseButton
-                            onClick={ ((ev: MouseEvent) => mouseHandler.onPanelTabClose(ev, panelRect.panel, idx)) as any }
-                            isCurrentTab={ panelRect.panel.tabIndex == idx }
+                            isCurrentTab={ panelRect.panel.currentTabIndex == tabNumber }
+                            onClick={ ev => {
+                                props.onClickTab(tabNumber)
+                                props.onCloseTab(ev, tabNumber)
+                            }}
                         >
                             ×
                         </StyledCloseButton>

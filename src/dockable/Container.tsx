@@ -12,7 +12,7 @@ const StyledContainer = styled.div<{
     --dockable-panelTabBkg: #2d2d2d;
     --dockable-panelTabTextColor: #ffffff;
     --dockable-overlayColor: #00aaff44;
-    --dockable-anchorColor: #ffffff;
+    --dockable-anchorColor: #00aaff;
     --dockable-buttonHoverBkg: #323232;
     --dockable-scrollbarColor: #777777;
 
@@ -114,59 +114,7 @@ export function Container(props: {
 
     }, [rect, props.state.update])
 
-
-    React.useEffect(() =>
-    {
-        const onRefreshPreferredSize = () =>
-        {
-            for (const panel of props.state.ref.current.floatingPanels)
-            {
-                if (!panel.justOpened)
-                    continue
-                
-                panel.justOpened = false
-                panel.rect.w = panel.preferredFloatingSize.w
-                panel.rect.h = panel.preferredFloatingSize.h
-
-                switch (panel.justOpenedAnchorAlignX)
-                {
-                    case 0:
-                        panel.rect.x = panel.justOpenedAnchorRect.xCenter - panel.rect.w / 2
-                        break
-                    case 1:
-                        panel.rect.x = panel.justOpenedAnchorRect.x2
-                        break
-                    case -1:
-                        panel.rect.x = panel.justOpenedAnchorRect.x1 - panel.rect.w
-                        break
-                }
-                
-                switch (panel.justOpenedAnchorAlignY)
-                {
-                    case 0:
-                        panel.rect.y = panel.justOpenedAnchorRect.yCenter - panel.rect.h / 2
-                        break
-                    case 1:
-                        panel.rect.y = panel.justOpenedAnchorRect.y2
-                        break
-                    case -1:
-                        panel.rect.y = panel.justOpenedAnchorRect.y1 - panel.rect.h
-                        break
-                }
-
-                Dockable.clampFloatingPanelStrictly(props.state.ref.current, panel, rectRef.current)
-                props.state.commit()
-            }
-        }
-
-        window.addEventListener("dockableRefreshPreferredSize", onRefreshPreferredSize)
-        return () => window.removeEventListener("dockableRefreshPreferredSize", onRefreshPreferredSize)
-
-    }, [])
-
     
-    const mouseData = Dockable.useMouseHandler(props.state, layoutRef, rectRef)
-
     const anchorSize = 5
     const resizeHandleSize = 20
     const dividerSize = 6
@@ -182,19 +130,22 @@ export function Container(props: {
                 state={ props.state }
                 panelRect={ panelRect }
                 tabHeight={ tabHeight }
-                mouseHandler={ mouseData }
+                onClickPanel={ () => handleClickedPanel(props.state, panelRect.panel, null) }
+                onClickTab={ (tabNumber) => handleClickedPanel(props.state, panelRect.panel, tabNumber) }
+                onCloseTab={ (ev, tabNumber) => handleClosedTab(ev, props.state, panelRect.panel, tabNumber) }
+                onDragHeader={ (ev, tabNumber) => handleDraggedHeader(ev, props.state, layoutRef, rectRef, panelRect.panel, tabNumber) }
             />
         )}
 
-        { layoutRef.current.content.map(w =>
+        { layoutRef.current.content.map(layoutContent =>
         {
             const setTitle = (title: string) =>
             {
-                if (w.content.title != title)
+                if (layoutContent.content.title != title)
                 {
                     window.requestAnimationFrame(() =>
                     {
-                        w.content.title = title
+                        layoutContent.content.title = title
                         props.state.commit()
                     })
                 }
@@ -202,49 +153,52 @@ export function Container(props: {
 
             const setPreferredSize = (width: number, height: number) =>
             {
-                if (w.tabIndex == w.panel.tabIndex &&
-                    (width != w.panel.preferredFloatingSize.w ||
-                    height != w.panel.preferredFloatingSize.h))
+                if (layoutContent.tabIndex == layoutContent.panel.currentTabIndex &&
+                    (width != layoutContent.panel.preferredFloatingSize.w ||
+                    height != layoutContent.panel.preferredFloatingSize.h))
                 {
                     window.requestAnimationFrame(() =>
                     {
-                        w.panel.preferredFloatingSize = new Dockable.Rect(0, 0, width, height)
+                        layoutContent.panel.preferredFloatingSize = new Dockable.Rect(0, 0, width, height)
                         props.state.commit()
 
-                        if (w.panel.justOpened)
+                        if (layoutContent.panel.justOpened)
                             window.dispatchEvent(new Event("dockableRefreshPreferredSize"))
                     })
                 }
             }
 
             return <StyledContentRoot
-                key={ w.content.contentId }
-                onMouseDown={ ((ev: MouseEvent) => mouseData.onPanelActivate(ev, w.panel)) as any }
-                isCurrentTab={ w.panel.tabIndex == w.tabIndex }
+                key={ layoutContent.content.contentId }
+                isCurrentTab={ layoutContent.panel.currentTabIndex == layoutContent.tabIndex }
+                onMouseDown={ () => handleClickedPanel(props.state, layoutContent.panel, null) }
                 style={{
-                    left: w.panelRect.rect.x,
-                    top: w.panelRect.rect.y + tabHeight,
-                    width: w.panelRect.rect.w,
-                    height: w.panelRect.rect.h - tabHeight,
-                    zIndex: w.panelRect.zIndex * 3 + 1,
+                    left: (layoutContent.layoutPanel.rect.x) + "px",
+                    top: (layoutContent.layoutPanel.rect.y + tabHeight) + "px",
+                    width: (layoutContent.layoutPanel.rect.w) + "px",
+                    height: (layoutContent.layoutPanel.rect.h - tabHeight) + "px",
+                    zIndex: layoutContent.layoutPanel.zIndex * 3 + 1,
             }}>
                 <Dockable.WindowContext.Provider
                     value={{
-                        panel: w.panel,
-                        contentId: w.content.contentId,
+                        panel: layoutContent.panel,
+                        contentId: layoutContent.content.contentId,
 
                         setTitle,
                         setPreferredSize,
                 }}>
                     <StyledContentInner>
-                        { w.content.element }
+                        { layoutContent.content.element }
                     </StyledContentInner>
                 </Dockable.WindowContext.Provider>
                 
-                { !w.panel.floating ? null : 
+                { !layoutContent.panel.floating ? null : 
                     <StyledBottomRightResizeHandle
-                        onMouseDown={ ((ev: MouseEvent) => mouseData.onPanelResize(ev, w.panel)) as any }
                         size={ resizeHandleSize }
+                        onMouseDown={ ev => {
+                            handleClickedPanel(props.state, layoutContent.panel, null)
+                            handleDraggedEdge(ev, props.state, layoutRef, layoutContent.panel)
+                        }}
                     />
                 }
             </StyledContentRoot>
@@ -252,7 +206,7 @@ export function Container(props: {
 
         { layoutRef.current.dividers.map(divider =>
             <StyledDivider
-                onMouseDown={ ((ev: MouseEvent) => mouseData.onDividerResize(ev, divider)) as any }
+                onMouseDown={ ev => handleDraggedDivider(ev, props.state, divider) }
                 style={{
                     width: (divider.rect.w || dividerSize) + "px",
                     height: (divider.rect.h || dividerSize) + "px",
@@ -266,24 +220,25 @@ export function Container(props: {
                         "ns-resize",
 
                     zIndex: 1,
+                    userSelect: "none",
             }}/>
         )}
 
-        { !mouseData.showAnchors || !mouseData.draggingAnchor ? null :
+        { props.state.ref.current.previewAnchor &&
             <div style={{
                 position: "absolute",
-                left: (mouseData.draggingAnchor.previewRect.x1) + "px",
-                top: (mouseData.draggingAnchor.previewRect.y1) + "px",
-                width: (mouseData.draggingAnchor.previewRect.x2 - mouseData.draggingAnchor.previewRect.x1 - 1) + "px",
-                height: (mouseData.draggingAnchor.previewRect.y2 - mouseData.draggingAnchor.previewRect.y1 - 1) + "px",
+                left: (props.state.ref.current.previewAnchor.previewRect.x) + "px",
+                top: (props.state.ref.current.previewAnchor.previewRect.y) + "px",
+                width: (props.state.ref.current.previewAnchor.previewRect.w - 1) + "px",
+                height: (props.state.ref.current.previewAnchor.previewRect.h - 1) + "px",
 
                 backgroundColor: "var(--dockable-overlayColor)",
                 zIndex: 1000,
             }}/>
         }
 
-        { !mouseData.showAnchors ? null : layoutRef.current.anchors.map((anchor, i) =>
-            anchor.panel == mouseData.grabbedPanel ? null :
+        { props.state.ref.current.showAnchors &&
+            layoutRef.current.anchors.map((anchor, i) =>
                 <div key={ i } style={{
                     position: "absolute",
                     left: (anchor.x - anchorSize) + "px",
@@ -296,8 +251,241 @@ export function Container(props: {
                     borderLeft: (anchorSize) + "px solid " + (anchor.mode == Dockable.DockMode.Right || anchor.mode == Dockable.DockMode.Full ? "var(--dockable-anchorColor)" : "transparent"), 
                     borderRight: (anchorSize) + "px solid " + (anchor.mode == Dockable.DockMode.Left || anchor.mode == Dockable.DockMode.Full ? "var(--dockable-anchorColor)" : "transparent"), 
                     zIndex: 1001,
-                }}/>
-        )}
+                }}/>)
+        }
 
     </StyledContainer>
+}
+
+
+function handleDraggedDivider(
+    ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    state: Dockable.RefState<Dockable.State>,
+    divider: Dockable.Divider)
+{
+    ev.preventDefault()
+
+    const onMouseMove = (ev: MouseEvent) =>
+    {
+        const mouseX = ev.pageX
+        const mouseY = ev.pageY
+
+        divider.panel.splitSize =
+            Math.max(0.05,
+                Math.min(0.95,
+                    ((divider.vertical ? mouseY : mouseX) - divider.resizeMin) /
+                    (divider.resizeMax - divider.resizeMin)))
+
+        state.commit()
+    }
+
+    const onMouseUp = () =>
+    {
+        window.removeEventListener("mousemove", onMouseMove)
+        window.removeEventListener("mouseup", onMouseUp)
+    }
+
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
+}
+
+
+function handleDraggedEdge(
+    ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    state: Dockable.RefState<Dockable.State>,
+    layout: React.MutableRefObject<Dockable.Layout>,
+    panel: Dockable.Panel)
+{
+    ev.preventDefault()
+    ev.stopPropagation()
+
+    const startMouseX = ev.pageX
+    const startMouseY = ev.pageY
+
+    const layoutPanel = layout.current.panelRects.find(p => p.panel === panel)!
+    const startPanelRect = layoutPanel.rect
+
+    const onMouseMove = (ev: MouseEvent) =>
+    {
+        const mouseX = ev.pageX
+        const mouseY = ev.pageY
+
+        panel.rect = new Dockable.Rect(
+            startPanelRect.x,
+            startPanelRect.y,
+            Math.max(150, startPanelRect.w + mouseX - startMouseX),
+            Math.max(50, startPanelRect.h + mouseY - startMouseY))
+
+        state.commit()
+    }
+
+    const onMouseUp = () =>
+    {
+        window.removeEventListener("mousemove", onMouseMove)
+        window.removeEventListener("mouseup", onMouseUp)
+    }
+
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
+}
+
+
+function handleDraggedHeader(
+    ev: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    state: Dockable.RefState<Dockable.State>,
+    layout: React.MutableRefObject<Dockable.Layout>,
+    containerRect: React.MutableRefObject<Dockable.Rect>,
+    draggedPanel: Dockable.Panel,
+    draggedTabIndex: number | null)
+{
+    ev.preventDefault()
+    ev.stopPropagation()
+
+    const startMouseX = ev.pageX
+    const startMouseY = ev.pageY
+
+    const layoutPanel = layout.current.panelRects.find(p => p.panel === draggedPanel)!
+    let startPanelRect = layoutPanel.rect
+
+    let dragLocked = true
+
+
+    const onMouseMove = (ev: MouseEvent) =>
+    {
+        const mouseX = ev.pageX
+        const mouseY = ev.pageY
+
+        // Start dragging only when mouse moves far enough, and
+        // undock panel at this moment if originally docked
+        if (Math.abs(mouseX - startMouseX) > 10 ||
+            Math.abs(mouseY - startMouseY) > 10)
+        {
+            dragLocked = false
+
+            const floatingRect = new Dockable.Rect(
+                mouseX - (mouseX - startPanelRect.x),
+                mouseY - (mouseY - startPanelRect.y),
+                layoutPanel!.rect.w,
+                layoutPanel!.rect.h)
+                
+            if (draggedTabIndex !== null && draggedPanel.contentList.length > 1)
+            {
+                // Remove single tab content from original panel and
+                // transfer it to a new floating panel
+                const content = draggedPanel.contentList[draggedTabIndex]
+                Dockable.removeContent(state.ref.current, draggedPanel, content.contentId)
+
+                draggedPanel = Dockable.makePanel(state.ref.current)
+                Dockable.addContent(state.ref.current, draggedPanel, content)
+
+                Dockable.coallesceEmptyPanels(state.ref.current)
+
+                draggedPanel.rect = startPanelRect = floatingRect
+            }
+
+            else if (!draggedPanel.floating)
+            {
+                // Remove original docked panel and
+                // transfer all content to a new floating panel
+                const contents = [...draggedPanel.contentList]
+                const originalTabIndex = draggedPanel.currentTabIndex
+                for (const content of contents)
+                    Dockable.removeContent(state.ref.current, draggedPanel, content.contentId)
+                
+                draggedPanel = Dockable.makePanel(state.ref.current)
+                for (const content of contents)
+                    Dockable.addContent(state.ref.current, draggedPanel, content)
+
+                draggedPanel.currentTabIndex = originalTabIndex
+                Dockable.coallesceEmptyPanels(state.ref.current)
+
+                draggedPanel.rect = startPanelRect = floatingRect
+            }
+
+            state.ref.current.showAnchors = true
+            state.commit()
+        }
+
+        // Handle actual dragging
+        if (!dragLocked)
+        {
+            // Move panel rect
+            draggedPanel.rect = startPanelRect.displace(mouseX - startMouseX, mouseY - startMouseY)
+            
+            // Find nearest anchor
+            let nearestDistSqr = 50 * 50
+            state.ref.current.previewAnchor = null
+
+            for (const anchor of layout.current.anchors)
+            {
+                if (anchor.panel === draggedPanel)
+                    continue
+
+                const xx = anchor.x - mouseX
+                const yy = anchor.y - mouseY
+                const distSqr = xx * xx + yy * yy
+                if (distSqr < nearestDistSqr)
+                {
+                    nearestDistSqr = distSqr
+                    state.ref.current.previewAnchor = anchor
+                }
+            }
+
+            state.commit()
+        }
+    }
+
+    const onMouseUp = () =>
+    {
+        window.removeEventListener("mousemove", onMouseMove)
+        window.removeEventListener("mouseup", onMouseUp)
+        
+        // Dock dragged panel if near an anchor
+        if (state.ref.current.previewAnchor)
+        {
+            Dockable.dock(
+                state.ref.current,
+                draggedPanel,
+                state.ref.current.previewAnchor.panel,
+                state.ref.current.previewAnchor.mode)
+        }
+
+        Dockable.clampFloatingPanels(state.ref.current, containerRect.current)
+        state.ref.current.showAnchors = false
+        state.ref.current.previewAnchor = null
+        state.commit()
+    }
+
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
+}
+
+
+function handleClickedPanel(
+    state: Dockable.RefState<Dockable.State>,
+    clickedPanel: Dockable.Panel,
+    tabNumber: number | null)
+{
+    if (tabNumber !== null)
+    {
+        clickedPanel.currentTabIndex = tabNumber
+    }
+
+    Dockable.setPanelActiveAndBringToFront(state.ref.current, clickedPanel)
+    state.commit()
+}
+
+
+function handleClosedTab(
+    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    state: Dockable.RefState<Dockable.State>,
+    panel: Dockable.Panel,
+    tabNumber: number)
+{
+    ev.preventDefault()
+
+    const content = panel.contentList[tabNumber]
+    Dockable.removeContent(state.ref.current, panel, content.contentId)
+    Dockable.coallesceEmptyPanels(state.ref.current)
+    state.commit()
 }

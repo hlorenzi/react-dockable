@@ -12,6 +12,9 @@ export interface State
     rootPanel: Panel
     floatingPanels: Panel[]
     activePanel: Panel | null
+
+    showAnchors: boolean
+    previewAnchor: Anchor | null
 }
 
 
@@ -40,7 +43,7 @@ export interface Panel
     bugfixAppearOnTop: boolean
 
     contentList: Content[]
-    tabIndex: number
+    currentTabIndex: number
 
     splitPanels: Panel[]
     splitMode: SplitMode
@@ -107,7 +110,7 @@ export interface LayoutContent
     content: Content
     tabIndex: number
     panel: Panel
-    panelRect: LayoutPanel
+    layoutPanel: LayoutPanel
 }
 
 
@@ -121,7 +124,7 @@ export function makeState(): State
             bugfixAppearOnTop: false,
             rect: new Rect(0, 0, 0, 0),
             contentList: [],
-            tabIndex: 0,
+            currentTabIndex: 0,
             splitPanels: [],
             splitMode: SplitMode.LeftRight,
             splitSize: 0.5,
@@ -136,6 +139,9 @@ export function makeState(): State
         },
         floatingPanels: [],
         activePanel: null,
+
+        showAnchors: false,
+        previewAnchor: null,
     }
 }
 
@@ -150,7 +156,7 @@ export function makePanel(state: State): Panel
         rect: new Rect(0, 0, 0, 0),
 
         contentList: [],
-        tabIndex: 0,
+        currentTabIndex: 0,
 
         splitPanels: [],
         splitMode: SplitMode.LeftRight,
@@ -202,7 +208,7 @@ export function addNewContent(state: State, toPanel: Panel, element: ContentElem
         title: "",
         element,
     })
-    toPanel.tabIndex = toPanel.contentList.length - 1
+    toPanel.currentTabIndex = toPanel.contentList.length - 1
     toPanel.ephemeral = false
 }
 
@@ -211,19 +217,22 @@ export function addContent(state: State, toPanel: Panel, content: Content)
 {
     const id = state.idNext++
     toPanel.contentList.push(content)
-    toPanel.tabIndex = toPanel.contentList.length - 1
+    toPanel.currentTabIndex = toPanel.contentList.length - 1
     toPanel.ephemeral = false
 }
 
 
 export function removeContent(state: State, fromPanel: Panel, contentId: ContentId)
 {
-    const windowIndex = fromPanel.contentList.findIndex(w => w.contentId === contentId)
-    if (windowIndex < 0)
+    const index = fromPanel.contentList.findIndex(w => w.contentId === contentId)
+    if (index < 0)
         return
     
-    fromPanel.contentList.splice(windowIndex, 1)
-    fromPanel.tabIndex = Math.max(0, Math.min(fromPanel.contentList.length - 1, fromPanel.tabIndex))
+    fromPanel.contentList.splice(index, 1)
+    fromPanel.currentTabIndex =
+        Math.max(0,
+            Math.min(fromPanel.contentList.length - 1,
+                fromPanel.currentTabIndex))
 }
 
 
@@ -244,7 +253,7 @@ export function removeEphemeralsRecursive(state: State, fromPanel: Panel)
     if (fromPanel.ephemeral)
     {
         fromPanel.contentList = []
-        fromPanel.tabIndex = 0
+        fromPanel.currentTabIndex = 0
     }
 }
 
@@ -306,7 +315,7 @@ export function dock(state: State, panel: Panel, dockIntoPanel: Panel, mode: Doc
 
         const newSubpanel = makePanel(state)
         newSubpanel.contentList = dockIntoPanel.contentList
-        newSubpanel.tabIndex = dockIntoPanel.tabIndex
+        newSubpanel.currentTabIndex = dockIntoPanel.currentTabIndex
         newSubpanel.splitMode = dockIntoPanel.splitMode
         newSubpanel.splitPanels = dockIntoPanel.splitPanels
         newSubpanel.splitSize = dockIntoPanel.splitSize
@@ -331,6 +340,21 @@ export function dock(state: State, panel: Panel, dockIntoPanel: Panel, mode: Doc
     {
         throw "invalid docking"
     }
+}
+
+export function setPanelActiveAndBringToFront(state: State, panel: Panel)
+{
+    if (panel.contentList.length != 0)
+        state.activePanel = panel
+
+    if (!panel.floating)
+        return
+
+    state.floatingPanels = state.floatingPanels.filter(p => p !== panel)
+    state.floatingPanels.push(panel)
+    
+    if (!panel.ephemeral)
+        removeEphemerals(state)
 }
 
 
@@ -431,7 +455,7 @@ export function traverseLayout(panel: Panel, rect: Rect, layout: Layout)
                 content: panel.contentList[w],
                 tabIndex: w,
                 panel,
-                panelRect,
+                layoutPanel: panelRect,
             })
         }
     
@@ -511,7 +535,7 @@ export function getLayout(state: State, rect: Rect): Layout
                 content: floatingPanel.contentList[w],
                 tabIndex: w,
                 panel: floatingPanel,
-                panelRect,
+                layoutPanel: panelRect,
             })
         }
 
