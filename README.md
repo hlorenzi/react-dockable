@@ -12,10 +12,15 @@ so `useState`, `useEffect`, etc. work out of the box,
 and state carries over even if the user rearranges
 their panels.
 
+[![npm][badge-npm-img]][badge-npm-url]
+
 [![Discord][badge-discord-img]][badge-discord-url]
 
 [badge-discord-img]: https://img.shields.io/discord/394999035540275222?label=Join%20the%20Discord%20server!&logo=discord
 [badge-discord-url]: https://discord.com/invite/pXeDXGD
+
+[badge-npm-img]: https://img.shields.io/npm/v/@hlorenzi/react-dockable
+[badge-npm-url]: https://www.npmjs.com/package/@hlorenzi/react-dockable
 
 ## Installation
 
