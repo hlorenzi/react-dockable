@@ -1,8 +1,10 @@
 import * as React from "react"
-import * as Dockable from "./index"
+import * as Dockable from "./index.js"
 
 
-export function useDockable(init?: (state: Dockable.State) => void): Dockable.RefState<Dockable.State>
+export function useDockable(
+    init?: (state: Dockable.State) => void)
+    : Dockable.RefState<Dockable.State>
 {
     return Dockable.useRefState(() =>
     {
@@ -37,24 +39,14 @@ window.addEventListener("mousemove", (ev: MouseEvent) =>
 })
 
 
-export function createFloating(
+export function spawnFloating(
     state: Dockable.RefState<Dockable.State>,
-    elem: JSX.Element,
-    alignX?: number,
-    alignY?: number,
-    rect?: Dockable.Rect)
+    elem: JSX.Element)
     : Dockable.Panel
 {
     const panel = Dockable.makePanel(state.ref.current)
     Dockable.addNewContent(state.ref.current, panel, elem)
-    if (rect)
-        panel.rect = new Dockable.Rect(rect.x2, rect.y2, 500, 300)
-    else
-        panel.rect = new Dockable.Rect(mousePos.x, mousePos.y, 500, 300)
-
-    panel.justOpenedAnchorRect = rect ?? new Dockable.Rect(mousePos.x - 15, mousePos.y - 15, 30, 30)
-    panel.justOpenedAnchorAlignX = alignX ?? 1
-    panel.justOpenedAnchorAlignY = alignY ?? 1
+    panel.rect = new Dockable.Rect(mousePos.x, mousePos.y, 500, 300)
 
     state.ref.current.activePanel = panel
     state.commit()
@@ -62,15 +54,12 @@ export function createFloating(
 }
 
 
-export function createFloatingEphemeral(
+export function spawnFloatingEphemeral(
     state: Dockable.RefState<Dockable.State>,
-    elem: JSX.Element,
-    alignX?: number,
-    alignY?: number,
-    rect?: Dockable.Rect)
+    elem: JSX.Element)
     : Dockable.Panel
 {
-    const panel = createFloating(state, elem, alignX, alignY, rect)
+    const panel = spawnFloating(state, elem)
     Dockable.removeEphemerals(state.ref.current)
     panel.ephemeral = true
     state.commit()

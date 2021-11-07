@@ -6,7 +6,7 @@ module.exports =
 	mode: "production",
 	entry:
 	{
-		main: path.resolve(__dirname, "src/main.tsx"),
+		main: path.resolve(__dirname, "example/main.tsx"),
 	},
 	
 	output:
@@ -18,7 +18,7 @@ module.exports =
     resolve: {
 		extensions: [".ts", ".tsx", ".js", ".json"],
 		fallback: {
-			"assert": false,
+			"@hlorenzi/react-dockable": path.resolve(__dirname, "dist"),
 		},
 	},
 	

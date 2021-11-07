@@ -27,7 +27,7 @@ jobs:
     - run: rm .gitignore
     - run: mv .gitignore.ghpages .gitignore
     - run: npm ci
-    - run: npm run build
+    - run: npm run build2
     - run: git config user.name github-actions
     - run: git config user.email github-actions@github.com
     - run: git add -A

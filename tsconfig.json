@@ -4,10 +4,19 @@
       "target": "esnext",
       "module": "esnext",
       "moduleResolution": "node",
-      "allowSyntheticDefaultImports": true,
+      "baseUrl": "./src",
+      "rootDir": "./src",
+      "outDir": "./dist",
       "strict": true,
-      "jsx": "preserve"
+      "jsx": "preserve",
+      "declaration": true,
+      "paths": {
+        "@hlorenzi/react-dockable": ["../dist"]
+      }
     },
+    "include": [
+      "./src/index.ts"
+    ],
     "exclude": [
       "node_modules"
     ]

@@ -1,4 +1,4 @@
-import { Rect } from "./rect"
+import { Rect } from "./rect.js"
 
 
 export type PanelId = number
@@ -52,10 +52,6 @@ export interface Panel
     preferredWidth: number
     preferredHeight: number
 
-    justOpened: boolean
-    justOpenedAnchorRect: Rect
-    justOpenedAnchorAlignX: number
-    justOpenedAnchorAlignY: number
     ephemeral: boolean
 }
 
@@ -132,10 +128,6 @@ export function makeState(): State
             preferredWidth: 300,
             preferredHeight: 250,
 
-            justOpened: false,
-            justOpenedAnchorRect: new Rect(0, 0, 0, 0),
-            justOpenedAnchorAlignX: 0,
-            justOpenedAnchorAlignY: 1,
             ephemeral: false,
         },
         floatingPanels: [],
@@ -166,10 +158,6 @@ export function makePanel(state: State): Panel
         preferredWidth: 300,
         preferredHeight: 250,
 
-        justOpened: true,
-        justOpenedAnchorRect: new Rect(0, 0, 0, 0),
-        justOpenedAnchorAlignX: 0,
-        justOpenedAnchorAlignY: 1,
         ephemeral: false,
     }
     state.floatingPanels.push(panel)
@@ -177,7 +165,7 @@ export function makePanel(state: State): Panel
 }
 
 
-export function createAndDockPanel(
+export function createDockedPanel(
     state: State,
     dockIntoPanel: Panel,
     mode: DockMode,

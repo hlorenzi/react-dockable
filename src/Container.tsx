@@ -1,5 +1,5 @@
 import * as React from "react"
-import * as Dockable from "./index"
+import * as Dockable from "./index.js"
 import styled from "styled-components"
 
 
@@ -79,10 +79,21 @@ const StyledDivider = styled.div`
 
 export function Container(props: {
     state: Dockable.RefState<Dockable.State>,   
+
+    anchorSize?: number,
+    resizeHandleSize?: number,
+    dividerSize?: number,
+    tabHeight?: number,
 })
 {
     const [rect, setRect] = React.useState(new Dockable.Rect(0, 0, 0, 0))
     const rootRef = React.useRef<HTMLDivElement>(null)
+
+
+    const anchorSize = props.anchorSize ?? 5
+    const resizeHandleSize = props.anchorSize ?? 10
+    const dividerSize = props.anchorSize ?? 6
+    const tabHeight = props.anchorSize ?? 25
 
 
     React.useLayoutEffect(() =>
@@ -109,20 +120,16 @@ export function Container(props: {
     }, [])
 
 
-    const layoutRef = React.useRef<Dockable.Layout>(null!)
     const rectRef = React.useRef<Dockable.Rect>(null!)
     rectRef.current = rect
+
+
+    const layoutRef = React.useRef<Dockable.Layout>(null!)
     layoutRef.current = React.useMemo(() =>
     {
         return Dockable.getLayout(props.state.ref.current, new Dockable.Rect(rect.x, rect.y, rect.w - 1, rect.h - 1))
 
-    }, [rect, props.state.update])
-
-    
-    const anchorSize = 5
-    const resizeHandleSize = 10
-    const dividerSize = 6
-    const tabHeight = 25
+    }, [rect, props.state.updateToken])
 
 
     const setTitle = (layoutContent: Dockable.LayoutContent, title: string) =>
@@ -372,7 +379,7 @@ function handleDraggedHeader(
             dragLocked = false
 
             const floatingRect = new Dockable.Rect(
-                mouseX - Math.min(draggedPanel.preferredWidth - 20, mouseX - startPanelRect.x),
+                mouseX - Math.min(draggedPanel.preferredWidth / 2, mouseX - startPanelRect.x),
                 mouseY - (mouseY - startPanelRect.y),
                 draggedPanel.preferredWidth,
                 draggedPanel.preferredHeight)

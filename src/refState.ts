@@ -1,17 +1,17 @@
-import React from "react"
+import * as React from "react"
 
 
 export interface RefState<T>
 {
     ref: React.MutableRefObject<T>
-    update: number
+    updateToken: number
     commit: () => void
 }
 
 
 export function useRefState<T>(initializer: () => T):  RefState<T>
 {
-    const [update, setUpdate] = React.useState(0)
+    const [updateToken, setUpdateToken] = React.useState(0)
 
     const ref = React.useRef<T>(null!)
     if (ref.current === null)
@@ -19,7 +19,7 @@ export function useRefState<T>(initializer: () => T):  RefState<T>
 
     return {
         ref,
-        update,
-        commit: () => setUpdate(n => (n + 1) % 10000)
+        updateToken,
+        commit: () => setUpdateToken(n => (n + 1) % 1000000)
     }
 }

@@ -1,5 +1,5 @@
 import * as React from "react"
-import * as Dockable from "./index"
+import * as Dockable from "./index.js"
 import styled from "styled-components"
 
 
@@ -124,6 +124,12 @@ const StyledCloseButton = styled.button<{
 `
 
 
+const StyledTabRowEmptySpace = styled.div`
+    min-width: 2em;
+    pointer-events: none;
+`
+
+
 export function ContainerPanel(props: {
     state: Dockable.RefState<Dockable.State>,
     panelRect: Dockable.LayoutPanel,
@@ -181,6 +187,8 @@ export function ContainerPanel(props: {
                         </StyledCloseButton>
                     </StyledTab>
                 )}
+
+                <StyledTabRowEmptySpace/>
 
             </StyledTabRowInner>
 
