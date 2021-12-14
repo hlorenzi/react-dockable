@@ -176,7 +176,7 @@ export function Container(props: {
                 tabHeight={ tabHeight }
                 onClickPanel={ () => handleClickedPanel(props.state, panelRect.panel, null) }
                 onClickTab={ (tabNumber) => handleClickedPanel(props.state, panelRect.panel, tabNumber) }
-                onCloseTab={ (ev, tabNumber) => handleClosedTab(ev, props.state, panelRect.panel, tabNumber) }
+                onCloseTab={ (ev, tabNumber) => handleClosedTab(props.state, panelRect.panel, tabNumber, ev) }
                 onDragHeader={ (ev, tabNumber) => handleDraggedHeader(ev, props.state, layoutRef, rectRef, panelRect.panel, tabNumber) }
             />
         )}
@@ -195,9 +195,16 @@ export function Container(props: {
             }}>
                 <Dockable.ContentContext.Provider value={{
                     layoutContent,
-
+                    content: layoutContent.content,
                     setTitle: (title) => setTitle(layoutContent, title),
                     setPreferredSize: (w, h) => setPreferredSize(layoutContent, w, h),
+                    close: () =>
+                        handleClosedTab(
+                          props.state,
+                          layoutContent.panel,
+                          layoutContent.tabIndex,
+                          undefined
+                        ),
                 }}>
                     <StyledContentInner>
                         { layoutContent.content.element }
@@ -495,15 +502,24 @@ function handleClickedPanel(
 
 
 function handleClosedTab(
-    ev: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     state: Dockable.RefState<Dockable.State>,
     panel: Dockable.Panel,
-    tabNumber: number)
+    tabNumber: number,
+    ev?: React.MouseEvent<HTMLButtonElement, MouseEvent>
+) 
 {
-    ev.preventDefault()
+    if (ev) {
+        ev.preventDefault();
+    }
 
-    const content = panel.contentList[tabNumber]
-    Dockable.removeContent(state.ref.current, panel, content.contentId)
-    Dockable.coallesceEmptyPanels(state.ref.current)
-    state.commit()
+    const content = panel.contentList[tabNumber];
+
+    if (content && content.isClosable && !content.isClosable()) {
+        // Don't close the tab
+        return;
+    }
+
+    Dockable.removeContent(state.ref.current, panel, content.contentId);
+    Dockable.coallesceEmptyPanels(state.ref.current);
+    state.commit();
 }

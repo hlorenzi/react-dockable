@@ -69,10 +69,12 @@ export function spawnFloatingEphemeral(
 
 export interface ContentContextProps
 {
-    layoutContent: Dockable.LayoutContent
+    layoutContent: Dockable.LayoutContent;
+    content: Dockable.Content;
 
-    setTitle: (title: string) => void
-    setPreferredSize: (w: number, h: number) => void
+    setTitle: (title: string) => void;
+    setPreferredSize: (w: number, h: number) => void;
+    close: () => void;
 }
 
 
