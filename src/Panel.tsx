@@ -1,4 +1,4 @@
-import * as React from "react"
+import React, { useRef } from "react";
 import * as Dockable from "./index.js"
 import styled from "styled-components"
 
@@ -52,6 +52,7 @@ const StyledTabRowInner = styled.div<{
     {
         width: 4px;
         height: 4px;
+        display: none;
     }
 
     &::-webkit-scrollbar-track
@@ -141,6 +142,7 @@ export function ContainerPanel(props: {
 })
 {
     const panelRect: Dockable.LayoutPanel = props.panelRect
+    const refTabRowInner = useRef<HTMLDivElement>(null);
 
     const isActivePanel = props.state.ref.current.activePanel === panelRect.panel
 
@@ -159,6 +161,11 @@ export function ContainerPanel(props: {
                 draggable
                 tabHeight={ props.tabHeight }
                 tabCount={ panelRect.panel.contentList.length }
+                onWheel={(ev) => {
+                  if (refTabRowInner && refTabRowInner.current)
+                    refTabRowInner.current.scrollLeft += ev.deltaY;
+                  ev.preventDefault();
+                }}
                 onMouseDown={ ev => {
                     props.onClickPanel()
                     props.onDragHeader(ev, null)
