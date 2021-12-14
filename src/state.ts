@@ -60,6 +60,7 @@ export interface Content
 {
     contentId: ContentId
     title: string
+    isClosable?: () => boolean;
     element: JSX.Element
 }
 
